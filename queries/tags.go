@@ -12,7 +12,7 @@ func QueryTags(db *sql.DB, post QueryPost) []string {
 	rows, err := db.Query("SELECT t.slug from wp_terms t, wp_term_taxonomy tt, wp_term_relationships tr WHERE t.term_id = tt.term_id AND tt.taxonomy = 'post_tag' AND tt.term_taxonomy_id = tr.term_taxonomy_id and tr.object_id=?", post.Id)
 	checkError(err)
 
-	tags := make([]string, 0, 20)
+	tags := make([]string, 0, 5)
 	var tag string
 
 	for rows.Next() {

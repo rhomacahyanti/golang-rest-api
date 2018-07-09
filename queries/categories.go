@@ -12,7 +12,7 @@ func QueryCategories(db *sql.DB, post QueryPost) []string {
 	rows, err := db.Query("SELECT t.slug from wp_terms t, wp_term_taxonomy tt, wp_term_relationships tr WHERE t.term_id = tt.term_id AND tt.taxonomy = 'category' AND tt.term_taxonomy_id = tr.term_taxonomy_id and tr.object_id=?", post.Id)
 	checkError(err)
 
-	categories := make([]string, 0, 20)
+	categories := make([]string, 0, 5)
 	var cat string
 
 	for rows.Next() {
