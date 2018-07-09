@@ -31,6 +31,7 @@ type Post struct {
 	PromoLink      string   `json:"promo_link, omitempty"`
 	ThumbnailImage string   `json:"thumbnail_image, omitempty"`
 	Categories     []string `json:"categories, omitempty"`
+	Tags           []string `json:"tags, omitempty"`
 }
 
 var queryPosts []queries.QueryPost
@@ -38,6 +39,8 @@ var queryPosts []queries.QueryPost
 var posts []Post
 
 var categories []string
+
+var tags []string
 
 func main() {
 
@@ -72,7 +75,8 @@ func getAllPost(w http.ResponseWriter, r *http.Request) {
 
 	for _, post := range queryPosts {
 		categories = queries.QueryCategories(db, post)
-		posts = append(posts, Post{Id: post.Id, Date: post.Date, Modified: post.Modified, Author: post.Author, Title: post.Title, Slug: post.Slug, Excerpt: post.Excerpt, Permalink: post.Permalink, PromoCode: post.PromoCode, StartDate: post.StartDate, EndDate: post.EndDate, MinTransaction: post.MinTransaction, PromoLink: post.PromoLink, ThumbnailImage: post.ThumbnailImage, Categories: categories})
+		tags = queries.QueryTags(db, post)
+		posts = append(posts, Post{Id: post.Id, Date: post.Date, Modified: post.Modified, Author: post.Author, Title: post.Title, Slug: post.Slug, Excerpt: post.Excerpt, Permalink: post.Permalink, PromoCode: post.PromoCode, StartDate: post.StartDate, EndDate: post.EndDate, MinTransaction: post.MinTransaction, PromoLink: post.PromoLink, ThumbnailImage: post.ThumbnailImage, Categories: categories, Tags: tags})
 	}
 	json.NewEncoder(w).Encode(posts)
 }
