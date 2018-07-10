@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"promo-rest-api/connection"
 	"promo-rest-api/queries"
 	"strconv"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
@@ -46,6 +48,16 @@ type MultipleCoupon struct {
 	Data        []string `json:"data, omitempty"`
 }
 
+type Header struct {
+	TotalData   int     `json:"total_data, omitempty"`
+	ProcessTime float64 `json:"process_time, omitempty"`
+}
+
+type RestResponse struct {
+	ApiHeader Header `json:"header, omitempty"`
+	Data      []Post `json:"data, omitempty"`
+}
+
 var queryPosts []queries.QueryPost
 
 var posts []Post
@@ -56,8 +68,11 @@ var tags []string
 
 var images PostImages
 
-func main() {
+var header Header
 
+var restResponse RestResponse
+
+func main() {
 	//Connect to database
 	db := connection.Connect()
 
@@ -82,25 +97,30 @@ func checkError(err error) {
 
 //Get All Post
 func getAllPost(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+
 	//Connect to database
 	db := connection.Connect()
 
 	defer db.Close()
 
+	totalData := 0
+
 	for _, post := range queryPosts {
+		//Get post image
 		thumbnail := queries.QueryThumbnailImage(db, post)
 		banner := queries.QueryFeatureImage(db, post)
-
-		fmt.Println("Thumbail: ", thumbnail)
-		fmt.Println("Banner: ", banner)
 
 		images.ThumbnailImage = thumbnail
 		images.FeaturedImage = banner
 
+		//Get post categories
 		categories = queries.QueryCategories(db, post)
 
+		//Get post tags
 		tags = queries.QueryTags(db, post)
 
+		//Get multiple coupon
 		coupons := queries.QueryMultipleCoupon(db, post)
 
 		//Total Coupon
@@ -110,8 +130,22 @@ func getAllPost(w http.ResponseWriter, r *http.Request) {
 		}
 
 		posts = append(posts, Post{Id: post.Id, Date: post.Date, Modified: post.Modified, Author: post.Author, Title: post.Title, Slug: post.Slug, Excerpt: post.Excerpt, Permalink: post.Permalink, LinkApps: post.LinkApps, PromoCode: post.PromoCode, MultiplePromoCode: MultipleCoupon{TotalCoupon: totalCoupons, Data: coupons}, StartDate: post.StartDate, EndDate: post.EndDate, DateText: post.DateText, MinTransaction: post.MinTransaction, AppLink: post.AppLink, PromoLink: post.PromoLink, Images: images, Categories: categories, Tags: tags})
+		totalData++
 	}
-	json.NewEncoder(w).Encode(posts)
+
+	//Time elapsed calculation
+	time.Sleep(time.Second * 2)
+	elapsed := time.Since(start)
+
+	//Api Header
+	header.ProcessTime = float64(math.Floor(elapsed.Seconds()*100) / 100)
+	header.TotalData = totalData
+
+	//Rest Response
+	restResponse.ApiHeader = header
+	restResponse.Data = posts
+
+	json.NewEncoder(w).Encode(restResponse)
 }
 
 //Get Single Post
